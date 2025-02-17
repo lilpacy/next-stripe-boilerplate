@@ -12,38 +12,41 @@ export default async function PricingPage() {
     getStripeProducts(),
   ]);
 
-  const basePlan = products.find((product) => product.name === 'Base');
-  const plusPlan = products.find((product) => product.name === 'Plus');
+  const standardPlan = products.find((product) => product.name === 'Standard');
+  const proPlan = products.find((product) => product.name === 'Pro');
 
-  const basePrice = prices.find((price) => price.productId === basePlan?.id);
-  const plusPrice = prices.find((price) => price.productId === plusPlan?.id);
+  const standardPrice = prices.find((price) => price.productId === standardPlan?.id);
+  const proPrice = prices.find((price) => price.productId === proPlan?.id);
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold mb-4">Simple, one-time pricing</h1>
+        <p className="text-xl text-gray-600">Purchase once, use forever.</p>
+      </div>
       <div className="grid md:grid-cols-2 gap-8 max-w-xl mx-auto">
         <PricingCard
-          name={basePlan?.name || 'Base'}
-          price={basePrice?.unitAmount || 800}
-          interval={basePrice?.interval || 'month'}
-          trialDays={basePrice?.trialPeriodDays || 7}
+          name={standardPlan?.name || 'Standard'}
+          price={standardPrice?.unitAmount || 9900}
           features={[
+            'All Core Features',
             'Unlimited Usage',
-            'Unlimited Workspace Members',
             'Email Support',
+            'Community Access'
           ]}
-          priceId={basePrice?.id}
+          priceId={standardPrice?.id}
         />
         <PricingCard
-          name={plusPlan?.name || 'Plus'}
-          price={plusPrice?.unitAmount || 1200}
-          interval={plusPrice?.interval || 'month'}
-          trialDays={plusPrice?.trialPeriodDays || 7}
+          name={proPlan?.name || 'Pro'}
+          price={proPrice?.unitAmount || 19900}
           features={[
-            'Everything in Base, and:',
-            'Early Access to New Features',
-            '24/7 Support + Slack Access',
+            'Everything in Standard, plus:',
+            'Premium Features',
+            'Priority Support',
+            'API Access',
+            'Custom Integrations'
           ]}
-          priceId={plusPrice?.id}
+          priceId={proPrice?.id}
         />
       </div>
     </main>
@@ -53,28 +56,21 @@ export default async function PricingPage() {
 function PricingCard({
   name,
   price,
-  interval,
-  trialDays,
   features,
   priceId,
 }: {
   name: string;
   price: number;
-  interval: string;
-  trialDays: number;
   features: string[];
   priceId?: string;
 }) {
   return (
     <div className="pt-6">
       <h2 className="text-2xl font-medium text-gray-900 mb-2">{name}</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        with {trialDays} day free trial
-      </p>
       <p className="text-4xl font-medium text-gray-900 mb-6">
         ${price / 100}{' '}
         <span className="text-xl font-normal text-gray-600">
-          per user / {interval}
+          one-time purchase
         </span>
       </p>
       <ul className="space-y-4 mb-8">

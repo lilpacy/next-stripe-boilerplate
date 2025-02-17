@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['customer', 'subscription'],
+      expand: ['customer', 'line_items'],
     });
 
     if (!session.customer || typeof session.customer === 'string') {
@@ -24,30 +24,14 @@ export async function GET(request: NextRequest) {
     }
 
     const customerId = session.customer.id;
-    const subscriptionId =
-      typeof session.subscription === 'string'
-        ? session.subscription
-        : session.subscription?.id;
-
-    if (!subscriptionId) {
-      throw new Error('No subscription found for this session.');
-    }
-
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-      expand: ['items.data.price.product'],
-    });
-
-    const plan = subscription.items.data[0]?.price;
-
-    if (!plan) {
-      throw new Error('No plan found for this subscription.');
-    }
-
-    const productId = (plan.product as Stripe.Product).id;
+    const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
+    const productId = lineItems.data[0]?.price?.product as string;
 
     if (!productId) {
-      throw new Error('No product ID found for this subscription.');
+      throw new Error('No product found for this session.');
     }
+
+    const product = await stripe.products.retrieve(productId);
 
     const userId = session.client_reference_id;
     if (!userId) {
@@ -80,10 +64,10 @@ export async function GET(request: NextRequest) {
       .update(teams)
       .set({
         stripeCustomerId: customerId,
-        stripeSubscriptionId: subscriptionId,
         stripeProductId: productId,
-        planName: (plan.product as Stripe.Product).name,
-        subscriptionStatus: subscription.status,
+        planName: product.name,
+        purchaseStatus: 'completed',
+        purchaseDate: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(teams.id, userTeam[0].teamId));
