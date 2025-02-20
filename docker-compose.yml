@@ -12,14 +12,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # frontend:
-  #   build: ./frontend
-  #   image: nextjs-saas-starter:latest
-  #   container_name: next_saas_starter_frontend
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - .:/app
-
 volumes:
   postgres_data:
