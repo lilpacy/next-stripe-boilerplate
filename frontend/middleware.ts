@@ -21,14 +21,14 @@ export async function middleware(request: NextRequest) {
       const expiresInOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       res.cookies.set({
-        name: 'session',
+        name: "session",
         value: await signToken({
           ...parsed,
           expires: expiresInOneDay.toISOString(),
         }),
         httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
+        // secure: true, // httpsでないときはコメントアウト
+        sameSite: "none", // クロスサイトcookieを許可
         expires: expiresInOneDay,
       });
     } catch (error) {

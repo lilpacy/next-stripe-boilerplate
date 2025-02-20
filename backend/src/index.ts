@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import payments from "./controllers/payments";
 import stripe from "./controllers/stripe";
+import auth from "./controllers/auth";
 
 const app = new Hono().basePath("/api");
 
@@ -27,6 +28,7 @@ app.get("/", async (c: Context) => {
 });
 
 // ルートの設定
+app.route("/auth", auth);
 app.route("/payments", payments);
 app.route("/stripe", stripe);
 

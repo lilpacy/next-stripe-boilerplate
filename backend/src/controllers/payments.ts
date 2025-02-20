@@ -14,14 +14,25 @@ const checkoutSchema = z.object({
 
 // 認証ミドルウェア
 async function authMiddleware(c: Context, next: Function) {
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const cookies = c.req.raw.headers.get("cookie");
+  console.log(JSON.stringify(cookies), null, 2);
+  if (!cookies) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
+  const sessionCookie = cookies
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith("session="));
+
+  if (!sessionCookie) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const sessionValue = sessionCookie.split("=")[1];
+
   try {
-    const token = authHeader.split(" ")[1];
-    const sessionData = await verifyToken(token);
+    const sessionData = await verifyToken(sessionValue);
 
     if (
       !sessionData ||
@@ -38,7 +49,8 @@ async function authMiddleware(c: Context, next: Function) {
     c.set("userId", sessionData.user.id);
     await next();
   } catch (error) {
-    return c.json({ error: "Invalid token" }, 401);
+    console.error("Authentication error:", error);
+    return c.json({ error: "Invalid session" }, 401);
   }
 }
 

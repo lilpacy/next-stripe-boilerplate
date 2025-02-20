@@ -50,10 +50,10 @@ export async function setSession(user: NewUser) {
     expires: expiresInOneDay.toISOString(),
   };
   const encryptedSession = await signToken(session);
-  (await cookies()).set('session', encryptedSession, {
+  (await cookies()).set("session", encryptedSession, {
     expires: expiresInOneDay,
     httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
+    // secure: true, // httpsでないときはコメントアウト
+    sameSite: "none", // クロスサイトcookieを許可
   });
 }

@@ -25,6 +25,7 @@ export const checkoutAction = withTeam(async (formData, team) => {
         teamId: team.id,
         userId: user.id,
       }),
+      credentials: "include",
     }
   );
 
