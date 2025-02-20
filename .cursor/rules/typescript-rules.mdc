@@ -1,6 +1,6 @@
 ---
 description: TypeScriptファイルに適用するルール
-globs: **/*.ts,**/*.tsx
+globs: **/*.{ts,tsx}
 ---
 - 常にTypeScriptを使用し、強い型付けを行うこと。
 - 関数型プログラミングパラダイムを採用すること。

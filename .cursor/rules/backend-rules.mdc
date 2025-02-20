@@ -1,0 +1,6 @@
+---
+description: ./backendに適用するルール
+globs: backend/**/*
+---
+./backend配下のコードベースでは以下のdbスキーマを参照すること
+[schema.prisma](mdc:backend/prisma/schema.prisma)
