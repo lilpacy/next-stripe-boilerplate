@@ -3,40 +3,62 @@ import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import Stripe from "stripe";
 import { createPrismaClient } from "../db/prismaClient";
+import { verifyToken } from "../utils/auth";
+import { getTeamForUser } from "../utils/team";
 
 const payments = new Hono();
 
 const checkoutSchema = z.object({
   priceId: z.string(),
-  teamId: z.number(),
-  userId: z.number(),
 });
+
+// 認証ミドルウェア
+async function authMiddleware(c: Context, next: Function) {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  try {
+    const token = authHeader.split(" ")[1];
+    const sessionData = await verifyToken(token);
+
+    if (
+      !sessionData ||
+      !sessionData.user ||
+      typeof sessionData.user.id !== "number"
+    ) {
+      return c.json({ error: "Invalid session" }, 401);
+    }
+
+    if (new Date(sessionData.expires) < new Date()) {
+      return c.json({ error: "Session expired" }, 401);
+    }
+
+    c.set("userId", sessionData.user.id);
+    await next();
+  } catch (error) {
+    return c.json({ error: "Invalid token" }, 401);
+  }
+}
 
 payments.post(
   "/checkout",
+  authMiddleware,
   zValidator("json", checkoutSchema),
   async (c: Context) => {
-    const { priceId, teamId, userId } = await c.req.json();
+    const { priceId } = await c.req.json();
+    const userId = c.get("userId");
 
     const prisma = await createPrismaClient(c.env.DATABASE_URL);
 
     try {
-      // チームとユーザーの存在確認
-      const [team, user] = await Promise.all([
-        prisma.teams.findUnique({
-          where: { id: teamId },
-        }),
-        prisma.users.findUnique({
-          where: { id: userId },
-        }),
-      ]);
-
-      if (!team || !user) {
-        return c.json({ error: "Team or user not found" }, 404);
+      const team = await getTeamForUser(userId, c.env.DATABASE_URL);
+      if (!team) {
+        return c.redirect(`/sign-up?redirect=checkout&priceId=${priceId}`);
       }
 
       // チェックアウトセッションの作成
-
       const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, {
         apiVersion: "2025-01-27.acacia",
       });
@@ -50,7 +72,7 @@ payments.post(
           },
         ],
         mode: "subscription",
-        success_url: `${c.env.FRONTEND_URL}/api/stripe/checkout?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${c.env.BACKEND_URL}/api/stripe/checkout?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${c.env.FRONTEND_URL}/pricing`,
         customer: team.stripe_customer_id || undefined,
         client_reference_id: userId.toString(),
@@ -63,7 +85,7 @@ payments.post(
       // アクティビティログの記録
       await prisma.activity_logs.create({
         data: {
-          team_id: teamId,
+          team_id: team.id,
           user_id: userId,
           action: "CHECKOUT_SESSION_CREATED",
           ip_address:

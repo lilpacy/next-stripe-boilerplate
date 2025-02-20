@@ -17,7 +17,7 @@ stripe.get(
     const { sessionId } = c.req.query();
 
     if (!sessionId) {
-      return c.json({ error: "Session ID is required" }, 400);
+      return c.redirect("/pricing");
     }
 
     const prisma = await createPrismaClient(c.env.DATABASE_URL);
@@ -92,10 +92,10 @@ stripe.get(
         },
       });
 
-      return c.json({ success: true });
+      return c.redirect("/dashboard");
     } catch (error) {
       console.error("Error handling successful checkout:", error);
-      return c.json({ error: "Failed to process checkout session" }, 500);
+      return c.redirect("/error");
     }
   }
 );
