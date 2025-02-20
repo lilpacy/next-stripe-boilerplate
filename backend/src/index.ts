@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import payments from "./controllers/payments";
 import stripe from "./controllers/stripe";
 import auth from "./controllers/auth";
+import users from "./controllers/users";
 
 const app = new Hono().basePath("/api");
 
@@ -31,5 +32,6 @@ app.get("/", async (c: Context) => {
 app.route("/auth", auth);
 app.route("/payments", payments);
 app.route("/stripe", stripe);
+app.route("/users", users);
 
 export default app;

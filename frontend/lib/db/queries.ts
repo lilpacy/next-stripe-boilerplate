@@ -4,36 +4,27 @@ import { activityLogs, teamMembers, teams, users } from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8787";
+
 export async function getUser() {
-  const sessionCookie = (await cookies()).get('session');
-  if (!sessionCookie || !sessionCookie.value) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/users/me`, {
+      credentials: "include", // Cookieを送信するために必要
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return null;
+      }
+      throw new Error("Failed to fetch user");
+    }
+
+    const { user } = await response.json();
+    return user;
+  } catch (error) {
+    console.error("Error fetching user:", error);
     return null;
   }
-
-  const sessionData = await verifyToken(sessionCookie.value);
-  if (
-    !sessionData ||
-    !sessionData.user ||
-    typeof sessionData.user.id !== 'number'
-  ) {
-    return null;
-  }
-
-  if (new Date(sessionData.expires) < new Date()) {
-    return null;
-  }
-
-  const user = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
-    .limit(1);
-
-  if (user.length === 0) {
-    return null;
-  }
-
-  return user[0];
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {
@@ -81,7 +72,7 @@ export async function getUserWithTeam(userId: number) {
 export async function getActivityLogs() {
   const user = await getUser();
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error("User not authenticated");
   }
 
   return await db
@@ -100,30 +91,22 @@ export async function getActivityLogs() {
 }
 
 export async function getTeamForUser(userId: number) {
-  const result = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-    with: {
-      teamMembers: {
-        with: {
-          team: {
-            with: {
-              teamMembers: {
-                with: {
-                  user: {
-                    columns: {
-                      id: true,
-                      name: true,
-                      email: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/users/me/team`, {
+      credentials: "include", // Cookieを送信するために必要
+    });
 
-  return result?.teamMembers[0]?.team || null;
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error("Failed to fetch team");
+    }
+
+    const { team } = await response.json();
+    return team;
+  } catch (error) {
+    console.error("Error fetching team:", error);
+    return null;
+  }
 }

@@ -9,7 +9,7 @@ const auth = new Hono();
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: true,
   sameSite: "none" as const,
   path: "/",
   maxAge: 7 * 24 * 60 * 60, // 7日間

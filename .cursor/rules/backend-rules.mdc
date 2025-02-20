@@ -5,3 +5,6 @@ globs: backend/**/*
 ./backend配下のコードベースでは以下のdbスキーマを参照すること
 [schema.prisma](mdc:backend/prisma/schema.prisma)
 [prismaClient.ts](mdc:backend/src/db/prismaClient.ts)
+
+./backendは以下では絶対にdrizzleは使わないこと
+prismaを使うこと
