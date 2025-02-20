@@ -4,7 +4,7 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import payments from "./controllers/payments";
 
-const app = new Hono();
+const app = new Hono().basePath("/api");
 
 // ミドルウェアの設定
 app.use("*", logger());
