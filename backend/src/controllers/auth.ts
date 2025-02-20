@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Context, Hono } from "hono";
 import { z } from "zod";
 import { createPrismaClient } from "../db/prismaClient";
 import { comparePasswords, hashPassword, generateJWT } from "../utils/auth";
@@ -10,7 +10,7 @@ const auth = new Hono();
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "Lax" as const,
+  sameSite: "none" as const,
   path: "/",
   maxAge: 7 * 24 * 60 * 60, // 7日間
 };
@@ -46,7 +46,7 @@ async function logActivity(
   });
 }
 
-auth.post("/signin", async (c) => {
+auth.post("/signin", async (c: Context) => {
   const body = await c.req.json();
   const result = signInSchema.safeParse(body);
 
@@ -55,7 +55,7 @@ auth.post("/signin", async (c) => {
   }
 
   const { email, password } = result.data;
-  const prisma = await createPrismaClient(process.env.DATABASE_URL!);
+  const prisma = await createPrismaClient(c.env.DATABASE_URL!);
 
   try {
     const userWithTeam = await prisma.users.findFirst({
@@ -98,7 +98,7 @@ auth.post("/signin", async (c) => {
   }
 });
 
-auth.post("/signup", async (c) => {
+auth.post("/signup", async (c: Context) => {
   const body = await c.req.json();
   const result = signUpSchema.safeParse(body);
 
@@ -107,7 +107,7 @@ auth.post("/signup", async (c) => {
   }
 
   const { email, password, inviteId } = result.data;
-  const prisma = await createPrismaClient(process.env.DATABASE_URL!);
+  const prisma = await createPrismaClient(c.env.DATABASE_URL!);
 
   try {
     const existingUser = await prisma.users.findUnique({
@@ -214,7 +214,7 @@ auth.post("/signup", async (c) => {
 });
 
 // Add signout endpoint
-auth.post("/signout", async (c) => {
+auth.post("/signout", async (c: Context) => {
   // Clear the auth cookie
   deleteCookie(c, "auth-token", {
     path: "/",

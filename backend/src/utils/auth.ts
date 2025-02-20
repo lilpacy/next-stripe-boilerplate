@@ -1,6 +1,5 @@
 import { jwtVerify, SignJWT } from "jose";
 import { User } from "../lib/db/schema";
-import { crypto } from "@cloudflare/workers-types";
 
 interface SessionData {
   user: {
